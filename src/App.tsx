@@ -1,27 +1,89 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, CircleUserRound,
-  Clock3, Instagram, Leaf, Menu, Minus, Plus, Search, ShoppingBag, Sparkles,
-  Star, Trash2, Truck, UserRound, X, Zap,
+  Clock3, Globe, Instagram, Leaf, Menu, Minus, Moon, Plus, Search, ShoppingBag, Sparkles,
+  Star, Sun, Trash2, Truck, UserRound, X, Zap,
 } from 'lucide-react';
 import { CONTACT_DETAILS, GOOGLE_FORM_FIELD_IDS, GOOGLE_FORM_URL } from '@/config';
 
+type Theme = 'light' | 'dark';
 type Category = 'Ladoos' | 'Protein Bars';
 type Page = 'home' | 'products' | 'story' | 'contact' | 'cart' | 'login' | 'register' | 'checkout' | 'success' | 'product';
-type Product = { id: string; name: string; category: Category; description: string; price: number; image: string; ingredients: string; pack: string; nutrition: string };
+type Product = { id: string; name: string; category: Category; description: string; price: number; image: string; hoverImage?: string; ingredients: string; pack: string; nutrition: string };
 type CartLine = { product: Product; quantity: number };
 type User = { name: string; email: string; phone: string; password: string };
 type Checkout = { name: string; phone: string; email: string; address: string; city: string; state: string; pincode: string };
 
+const LANGUAGES = [
+  { code: 'en', label: 'English (EN)' },
+  { code: 'hi', label: 'हिन्दी (Hindi)' },
+  { code: 'mr', label: 'मराठी (Marathi)' },
+  { code: 'bn', label: 'বাংলা (Bengali)' },
+  { code: 'gu', label: 'ગુજરાતી (Gujarati)' },
+  { code: 'ta', label: 'தமிழ் (Tamil)' },
+  { code: 'te', label: 'తెలుగు (Telugu)' },
+  { code: 'kn', label: 'ಕನ್ನಡ (Kannada)' },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ (Punjabi)' },
+  { code: 'es', label: 'Español' },
+  { code: 'fr', label: 'Français' },
+  { code: 'de', label: 'Deutsch' },
+];
+
+function LanguageSelector() {
+  const [currentLang, setCurrentLang] = useState<string>(() => {
+    try {
+      const match = document.cookie.match(/googtrans=\/en\/([a-zA-Z-]+)/);
+      return match ? match[1] : 'en';
+    } catch {
+      return 'en';
+    }
+  });
+
+  const handleLanguageChange = (langCode: string) => {
+    setCurrentLang(langCode);
+    try {
+      if (langCode === 'en') {
+        document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${window.location.hostname}; path=/;`;
+      } else {
+        document.cookie = `googtrans=/en/${langCode}; path=/;`;
+        document.cookie = `googtrans=/en/${langCode}; domain=.${window.location.hostname}; path=/;`;
+      }
+      const select = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+      if (select) {
+        select.value = langCode;
+        select.dispatchEvent(new Event('change'));
+      } else {
+        window.location.reload();
+      }
+    } catch {}
+  };
+
+  return (
+    <div className="language-selector" title="Change Language">
+      <Globe size={15} className="lang-icon" />
+      <select
+        value={currentLang}
+        onChange={e => handleLanguageChange(e.target.value)}
+        aria-label="Select website language"
+        className="lang-select"
+      >
+        {LANGUAGES.map(lang => (
+          <option key={lang.code} value={lang.code}>
+            {lang.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // Edit product names, descriptions, prices, images, ingredients and nutrition here.
 const products: Product[] = [
-  { id: 'plain-elaichi', name: 'Plain Elaichi', category: 'Ladoos', description: 'A soft, fragrant ladoo with the gentle warmth of green cardamom.', price: 349, image: 'https://images.pexels.com/photos/9951856/pexels-photo-9951856.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', ingredients: 'Mahua, roasted grains, cardamom, pure ghee', pack: 'Box of 6 · 180 g', nutrition: 'Serving size 30 g · Approx. 128 kcal' },
-  { id: 'elaichi-ginger', name: 'Elaichi Ginger Saunf Mahua', category: 'Ladoos', description: 'A layered blend of cardamom, ginger and fennel in every bite.', price: 399, image: 'https://images.pexels.com/photos/27695746/pexels-photo-27695746.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', ingredients: 'Mahua, ginger, fennel, cardamom, sesame', pack: 'Box of 6 · 180 g', nutrition: 'Serving size 30 g · Approx. 132 kcal' },
-  { id: 'masala-mahua', name: 'Masala Mahua', category: 'Ladoos', description: 'A savoury-sweet ladoo with toasted spices and a rounded finish.', price: 379, image: 'https://images.pexels.com/photos/38883078/pexels-photo-38883078.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', ingredients: 'Mahua, almonds, cumin, black pepper, jaggery', pack: 'Box of 6 · 180 g', nutrition: 'Serving size 30 g · Approx. 135 kcal' },
-  { id: 'mirch-mahua', name: 'Mirch Mahua', category: 'Ladoos', description: 'A curious little kick of chilli balanced with earthy sweetness.', price: 379, image: 'https://images.pexels.com/photos/27695747/pexels-photo-27695747.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', ingredients: 'Mahua, cashews, mild chilli, jaggery, sesame', pack: 'Box of 6 · 180 g', nutrition: 'Serving size 30 g · Approx. 137 kcal' },
-  { id: 'plain-protein', name: 'Plain Protein Bar', category: 'Protein Bars', description: 'A chewy, satisfying bar made for the space between meals.', price: 299, image: 'https://images.pexels.com/photos/57042/pexels-photo-57042.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', ingredients: 'Peanuts, oats, dates, seeds, jaggery', pack: 'Pack of 4 · 160 g', nutrition: 'Serving size 40 g · Approx. 168 kcal' },
-  { id: 'mahua-protein', name: 'Mahua Protein Bar', category: 'Protein Bars', description: 'A nutty, naturally sweet bar with a distinctive Indian note.', price: 329, image: 'https://images.pexels.com/photos/13898315/pexels-photo-13898315.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', ingredients: 'Mahua, peanuts, almonds, oats, dates', pack: 'Pack of 4 · 160 g', nutrition: 'Serving size 40 g · Approx. 172 kcal' },
-  { id: 'sesame-crunch', name: 'Sesame Crunch Bar', category: 'Protein Bars', description: 'Toasted sesame and nuts come together in a bright, crunchy bite.', price: 319, image: 'https://images.pexels.com/photos/18435586/pexels-photo-18435586.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', ingredients: 'Sesame, peanuts, pumpkin seeds, dates, oats', pack: 'Pack of 4 · 160 g', nutrition: 'Serving size 40 g · Approx. 165 kcal' },
+  { id: 'mahua-ladoo-1', name: 'Mahua Ladoo', category: 'Ladoos', description: 'A rich, wholesome ladoo made with Mahua, dry fruits and seeds — sweetened naturally, rooted in tradition.', price: 599, image: '/images/products/mahua_ladoo.jpg', hoverImage: '/images/products/mahua_ladoo_hover1.jpg', ingredients: 'Mahua flower, almonds, cashews, sesame seeds, flax seeds, jaggery, pure ghee', pack: 'Box of 6 · 250 g', nutrition: 'Serving size 42 g · Approx. 175 kcal' },
+  { id: 'mahua-ladoo-2', name: 'Mahua Ladoo (Variant 2)', category: 'Ladoos', description: 'A second expression of our Mahua Ladoo — with a slightly different dry fruit blend and a deeper, earthier sweetness.', price: 599, image: '/images/products/mahua_ladoo_hover2.jpg', hoverImage: '/images/products/mahua_ladoo_hover1.jpg', ingredients: 'Mahua flower, walnuts, pumpkin seeds, sunflower seeds, jaggery, ghee', pack: 'Box of 6 · 250 g', nutrition: 'Serving size 42 g · Approx. 178 kcal' },
+  { id: 'protein-bar-1', name: 'Protein Bar 1', category: 'Protein Bars', description: 'A high-protein bar crafted from natural ingredients — no added sugar, made for active everyday life.', price: 299, image: '/images/products/proteinbar1.png', hoverImage: '/images/products/proteinbar1_hover.png', ingredients: 'Peanut protein, oats, dates, chia seeds, roasted grains, natural flavours', pack: 'Pack of 1 · 60 g', nutrition: 'Serving size 60 g · Approx. 220 kcal · Protein 12 g' },
+  { id: 'protein-bar-2', name: 'Protein Bar 2', category: 'Protein Bars', description: 'Wholesome energy in every bite — made from real ingredients, naturally sweetened, suitable for active lifestyles.', price: 299, image: '/images/products/proteinbar2.png', hoverImage: '/images/products/proteinbar2_hover.png', ingredients: 'Peanut protein, almonds, oats, dates, sesame, natural cocoa', pack: 'Pack of 1 · 60 g', nutrition: 'Serving size 60 g · Approx. 225 kcal · Protein 13 g' },
 ];
 
 const heroImage = 'https://images.pexels.com/photos/7932705/pexels-photo-7932705.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
@@ -32,6 +94,14 @@ function money(value: number) { return `₹${value.toLocaleString('en-IN')}`; }
 function generateOrderId(): string { const now = new Date(); const year = now.getFullYear(); const month = String(now.getMonth() + 1).padStart(2, '0'); const date = String(now.getDate()).padStart(2, '0'); const randomNum = String(Math.floor(Math.random() * 10000)).padStart(4, '0'); return `ANM-${year}${month}${date}-${randomNum}`; }
 
 function App() {
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const saved = localStorage.getItem('anamritam-theme');
+      return saved === 'dark' ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
   const [page, setPage] = useState<Page>('home');
   const [selectedProduct, setSelectedProduct] = useState<Product>(products[0]);
   const [cart, setCart] = useState<CartLine[]>(() => readStorage('anamritam-cart', []));
@@ -40,11 +110,24 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState('');
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('anamritam-theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch {}
+  }, [theme]);
+
   useEffect(() => { localStorage.setItem('anamritam-cart', JSON.stringify(cart)); }, [cart]);
   useEffect(() => { if (user) localStorage.setItem('anamritam-session', JSON.stringify(user)); else localStorage.removeItem('anamritam-session'); }, [user]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [page]);
   useEffect(() => { if (!toast) return; const timer = window.setTimeout(() => setToast(''), 2400); return () => window.clearTimeout(timer); }, [toast]);
 
+  const toggleTheme = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));
   const itemCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
   const navigate = (next: Page) => { setPage(next); setMenuOpen(false); setCartOpen(false); };
@@ -58,8 +141,30 @@ function App() {
 
   return <div className="app-shell">
     <Announcement />
-    <Navbar itemCount={itemCount} user={user} onNavigate={navigate} onCart={() => setCartOpen(true)} onMenu={() => setMenuOpen(value => !value)} menuOpen={menuOpen} onLogout={() => { setUser(null); navigate('home'); }} />
-    {menuOpen && <MobileMenu onNavigate={navigate} />}
+    <Navbar
+      itemCount={itemCount}
+      user={user}
+      theme={theme}
+      currentPage={page}
+      onToggleTheme={toggleTheme}
+      onNavigate={navigate}
+      onCart={() => setCartOpen(true)}
+      onMenu={() => setMenuOpen(value => !value)}
+      menuOpen={menuOpen}
+      onLogout={() => { setUser(null); navigate('home'); }}
+    />
+    <MobileMenu
+      isOpen={menuOpen}
+      currentPage={page}
+      itemCount={itemCount}
+      user={user}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+      onNavigate={navigate}
+      onCart={() => { setMenuOpen(false); setCartOpen(true); }}
+      onClose={() => setMenuOpen(false)}
+      onLogout={() => { setUser(null); setMenuOpen(false); navigate('home'); }}
+    />
     <main>
       {page === 'home' && <Home onNavigate={navigate} onProduct={openProduct} onAdd={addToCart} />}
       {page === 'products' && <Products onProduct={openProduct} onAdd={addToCart} />}
@@ -78,22 +183,320 @@ function App() {
   </div>;
 }
 
-function Announcement() { return <div className="announcement"><span>Thoughtfully made in India</span><span className="announcement-separator">•</span><span>Free shipping on orders above ₹999</span><span className="announcement-separator">•</span><span>Pure · Fresh · Wholesome</span></div>; }
-function Navbar({ itemCount, user, onNavigate, onCart, onMenu, menuOpen, onLogout }: { itemCount: number; user: User | null; onNavigate: (page: Page) => void; onCart: () => void; onMenu: () => void; menuOpen: boolean; onLogout: () => void }) {
-  return <header className="navbar"><div className="nav-inner"><button className="mobile-menu-button" aria-label="Open navigation" onClick={onMenu}>{menuOpen ? <X size={23} /> : <Menu size={23} />}</button><button className="logo-button" onClick={() => onNavigate('home')}><img src="/images/anamritum_logo.jpg" alt="Anamritam" /></button><nav className="desktop-nav"><button onClick={() => onNavigate('home')}>Home</button><button onClick={() => onNavigate('products')}>Products</button><button onClick={() => onNavigate('story')}>Our Story</button><button onClick={() => onNavigate('story')}>Why Anamritam</button><button onClick={() => onNavigate('contact')}>Contact</button></nav><div className="nav-actions"><button className="account-link" onClick={() => onNavigate(user ? 'story' : 'login')} aria-label="Account"><CircleUserRound size={20} /><span>{user ? user.name.split(' ')[0] : 'Account'}</span></button>{user && <button className="logout-link" onClick={onLogout}>Sign out</button>}<button className="cart-button" onClick={onCart} aria-label={`Open cart with ${itemCount} items`}><ShoppingBag size={21} /><span className="cart-label">Cart</span>{itemCount > 0 && <b>{itemCount}</b>}</button></div></div></header>;
+function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
+  return (
+    <button
+      className="theme-toggle"
+      onClick={onToggle}
+      aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+      type="button"
+    >
+      {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+    </button>
+  );
 }
-function MobileMenu({ onNavigate }: { onNavigate: (page: Page) => void }) { return <div className="mobile-menu"><button onClick={() => onNavigate('home')}>Home</button><button onClick={() => onNavigate('products')}>Products</button><button onClick={() => onNavigate('story')}>Our Story</button><button onClick={() => onNavigate('story')}>Why Anamritam</button><button onClick={() => onNavigate('contact')}>Contact</button></div>; }
+
+function Announcement() {
+  const items = (
+    <>
+      <span>Thoughtfully made in India</span>
+      <span className="announcement-separator">•</span>
+      <span>Free shipping on orders above ₹999</span>
+      <span className="announcement-separator">•</span>
+      <span>Pure · Fresh · Wholesome</span>
+      <span className="announcement-separator">•</span>
+      <span>Thoughtfully made in India</span>
+      <span className="announcement-separator">•</span>
+      <span>Free shipping on orders above ₹999</span>
+      <span className="announcement-separator">•</span>
+      <span>Pure · Fresh · Wholesome</span>
+      <span className="announcement-separator">•</span>
+    </>
+  );
+
+  return (
+    <div className="announcement" role="region" aria-label="Announcement">
+      <div className="announcement-track">
+        <div className="announcement-content">{items}</div>
+        <div className="announcement-content" aria-hidden="true">{items}</div>
+      </div>
+    </div>
+  );
+}
+
+interface NavbarProps {
+  itemCount: number;
+  user: User | null;
+  theme: Theme;
+  currentPage: Page;
+  menuOpen: boolean;
+  onToggleTheme: () => void;
+  onNavigate: (page: Page) => void;
+  onCart: () => void;
+  onMenu: () => void;
+  onLogout: () => void;
+}
+
+function Navbar({
+  itemCount,
+  user,
+  theme,
+  currentPage,
+  onToggleTheme,
+  onNavigate,
+  onCart,
+  onMenu,
+  menuOpen,
+  onLogout,
+}: NavbarProps) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 15);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <header className={`navbar ${scrolled ? 'is-scrolled' : ''}`}>
+      <div className="nav-inner">
+        <button
+          className="mobile-menu-button"
+          aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={menuOpen}
+          onClick={onMenu}
+          type="button"
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+
+        <button className="brand-lockup" onClick={() => onNavigate('home')} aria-label="Anamritam Home">
+          <img src="/images/anamritum_logo.jpg" alt="Anamritam" className="brand-logo-img" />
+          <span className="brand-title">Anamritam</span>
+        </button>
+
+        <nav className="desktop-nav" aria-label="Main Navigation">
+          <button
+            className={`nav-link ${currentPage === 'home' ? 'is-active' : ''}`}
+            onClick={() => onNavigate('home')}
+          >
+            Home
+          </button>
+          <button
+            className={`nav-link ${currentPage === 'products' || currentPage === 'product' ? 'is-active' : ''}`}
+            onClick={() => onNavigate('products')}
+          >
+            Products
+          </button>
+          <button
+            className={`nav-link ${currentPage === 'story' ? 'is-active' : ''}`}
+            onClick={() => onNavigate('story')}
+          >
+            Our Story
+          </button>
+          <button
+            className="nav-link"
+            onClick={() => onNavigate('story')}
+          >
+            Why Anamritam
+          </button>
+          <button
+            className={`nav-link ${currentPage === 'contact' ? 'is-active' : ''}`}
+            onClick={() => onNavigate('contact')}
+          >
+            Contact
+          </button>
+        </nav>
+
+        <div className="nav-actions">
+          <LanguageSelector />
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+
+          <button
+            className={`account-link ${currentPage === 'login' || currentPage === 'register' ? 'is-active' : ''}`}
+            onClick={() => onNavigate(user ? 'story' : 'login')}
+            aria-label={user ? `Account: ${user.name}` : 'Login or Register'}
+          >
+            <CircleUserRound size={19} />
+            <span className="account-text">{user ? user.name.split(' ')[0] : 'Account'}</span>
+          </button>
+
+          {user && (
+            <button className="logout-link" onClick={onLogout} title="Sign out">
+              Sign out
+            </button>
+          )}
+
+          <button
+            className="cart-button"
+            onClick={onCart}
+            aria-label={`Open cart with ${itemCount} items`}
+          >
+            <ShoppingBag size={19} />
+            <span className="cart-label">Cart</span>
+            {itemCount > 0 && <b className="cart-badge">{itemCount}</b>}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+interface MobileMenuProps {
+  isOpen: boolean;
+  currentPage: Page;
+  itemCount: number;
+  user: User | null;
+  theme: Theme;
+  onToggleTheme: () => void;
+  onNavigate: (page: Page) => void;
+  onCart: () => void;
+  onClose: () => void;
+  onLogout: () => void;
+}
+
+function MobileMenu({
+  isOpen,
+  currentPage,
+  itemCount,
+  user,
+  theme,
+  onToggleTheme,
+  onNavigate,
+  onCart,
+  onClose,
+  onLogout,
+}: MobileMenuProps) {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const navItems = [
+    { label: 'Home', page: 'home' as Page, num: '01' },
+    { label: 'Products', page: 'products' as Page, num: '02' },
+    { label: 'Our Story', page: 'story' as Page, num: '03' },
+    { label: 'Why Anamritam', page: 'story' as Page, num: '04' },
+    { label: 'Contact', page: 'contact' as Page, num: '05' },
+  ];
+
+  return (
+    <div className="mobile-menu-overlay" role="dialog" aria-modal="true" aria-label="Mobile Navigation">
+      <div className="mobile-menu-backdrop" onClick={onClose} />
+      <div className="mobile-menu-panel">
+        <div className="mobile-menu-header">
+          <div className="brand-lockup mobile" onClick={() => onNavigate('home')}>
+            <img src="/images/anamritum_logo.jpg" alt="Anamritam" className="brand-logo-img" />
+            <span className="brand-title">Anamritam</span>
+          </div>
+          <div className="mobile-menu-header-actions">
+            <LanguageSelector />
+            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+            <button className="mobile-close-btn" onClick={onClose} aria-label="Close navigation">
+              <X size={22} />
+            </button>
+          </div>
+        </div>
+
+        <nav className="mobile-nav-list" aria-label="Mobile Navigation Links">
+          {navItems.map((item, index) => {
+            const isActive =
+              item.page === currentPage ||
+              (item.page === 'products' && currentPage === 'product');
+            return (
+              <button
+                key={item.label}
+                className={`mobile-nav-link ${isActive ? 'is-active' : ''}`}
+                style={{ animationDelay: `${0.04 * (index + 1)}s` }}
+                onClick={() => onNavigate(item.page)}
+              >
+                <span className="mobile-nav-num">{item.num}</span>
+                <span className="mobile-nav-label">{item.label}</span>
+                {isActive && <span className="mobile-active-dot" />}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="mobile-menu-footer">
+          <div className="mobile-user-section">
+            {user ? (
+              <div className="mobile-user-card">
+                <div className="mobile-user-info">
+                  <CircleUserRound size={22} />
+                  <div>
+                    <strong>{user.name}</strong>
+                    <small>{user.email}</small>
+                  </div>
+                </div>
+                <button className="mobile-logout-btn" onClick={onLogout}>
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <div className="mobile-auth-actions">
+                <button
+                  className="button button-dark full-width"
+                  onClick={() => onNavigate('login')}
+                >
+                  Sign In <ArrowRight size={15} />
+                </button>
+                <button
+                  className="button button-light full-width"
+                  onClick={() => onNavigate('register')}
+                >
+                  Create Account
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button className="mobile-cart-cta" onClick={onCart}>
+            <div className="mobile-cart-cta-left">
+              <ShoppingBag size={18} />
+              <span>Shopping Cart</span>
+            </div>
+            <span className="mobile-cart-cta-badge">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+          </button>
+
+          <p className="mobile-menu-tagline">Pure · Fresh · Wholesome</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 function Home({ onNavigate, onProduct, onAdd }: { onNavigate: (page: Page) => void; onProduct: (p: Product) => void; onAdd: (p: Product, q?: number) => void }) {
   return <><section className="hero"><div className="hero-copy"><p className="eyebrow">Nourishment, made the Indian way</p><h1>Goodness that<br /><em>comes naturally.</em></h1><p className="hero-subtitle">Pure, fresh and wholesome ladoos and protein bars crafted for everyday nourishment.</p><div className="hero-actions"><button className="button button-dark" onClick={() => onNavigate('products')}>Shop now <ArrowRight size={17} /></button><button className="text-button" onClick={() => onNavigate('products')}>Explore our products <ArrowRight size={16} /></button></div><div className="hero-trust"><span><Leaf size={17} /> Thoughtfully sourced</span><span><Sparkles size={17} /> Small-batch made</span></div></div><div className="hero-visual"><img src={heroImage} alt="Indian ingredients arranged on a natural kitchen table" /><div className="hero-badge"><span>01</span><p>Rooted in<br />real ingredients</p></div></div></section><section className="intro section"><div className="intro-mark">A</div><div><p className="eyebrow">A little about us</p><h2>Welcome to <em>Anamritam</em></h2><p className="body-copy">We bring together the goodness of traditional Indian ingredients and the ease of modern nutrition. Honest food, made with care, for the everyday moments that matter.</p><button className="underlined-link" onClick={() => onNavigate('story')}>Our story <ArrowRight size={15} /></button></div></section><CategorySection onNavigate={onNavigate} /><section className="section featured-section"><SectionHeading eyebrow="Made for your everyday" title="Favourites, for good reason" action="Shop all" onAction={() => onNavigate('products')} /><div className="product-grid featured-grid">{products.slice(0, 4).map(product => <ProductCard key={product.id} product={product} onAdd={onAdd} onView={onProduct} />)}</div></section><WhySection /><section className="story-banner"><div className="story-banner-image"><img src="https://images.pexels.com/photos/34142354/pexels-photo-34142354.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Peanuts and grains prepared for a wholesome recipe" /></div><div className="story-banner-copy"><p className="eyebrow">The Anamritam way</p><h2>Rooted in tradition.<br /><em>Made for today.</em></h2><p>We believe nourishing food can be joyful, convenient and deeply connected to where we come from.</p><button className="button button-light" onClick={() => onNavigate('story')}>Discover our story <ArrowRight size={17} /></button></div></section><InstagramSection /></>;
 }
 function SectionHeading({ eyebrow, title, action, onAction }: { eyebrow: string; title: string; action?: string; onAction?: () => void }) { return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></div>{action && <button className="underlined-link" onClick={onAction}>{action} <ArrowRight size={15} /></button>}</div>; }
 function CategorySection({ onNavigate }: { onNavigate: (page: Page) => void }) { return <section className="section category-section"><SectionHeading eyebrow="Find your kind of good" title="Shop by category" /><div className="category-grid"><button className="category-card category-ladoo" onClick={() => onNavigate('products')}><div><span className="category-number">01</span><h3>Ladoos</h3><p>Traditional goodness,<br />thoughtfully crafted.</p><span className="category-link">Explore ladoos <ArrowRight size={16} /></span></div><img src="https://images.pexels.com/photos/27695747/pexels-photo-27695747.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Traditional Indian ladoos" /></button><button className="category-card category-bar" onClick={() => onNavigate('products')}><div><span className="category-number">02</span><h3>Protein bars</h3><p>Wholesome energy for<br />modern everyday life.</p><span className="category-link">Explore protein bars <ArrowRight size={16} /></span></div><img src="https://images.pexels.com/photos/13898315/pexels-photo-13898315.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Wholesome nut protein bars" /></button></div></section>; }
-function ProductCard({ product, onAdd, onView }: { product: Product; onAdd: (p: Product, q?: number) => void; onView: (p: Product) => void }) { const [quantity, setQuantity] = useState(1); return <article className="product-card"><button className="product-image-button" onClick={() => onView(product)}><div className="product-image"><img src={product.image} alt={product.name} /><span className="product-tag">{product.category === 'Ladoos' ? 'Ladoo' : 'Bar'}</span></div></button><div className="product-card-copy"><div className="product-card-top"><div><p className="product-category">{product.category}</p><h3>{product.name}</h3></div><strong>{money(product.price)}</strong></div><p className="product-description">{product.description}</p><div className="product-card-actions"><QuantitySelector quantity={quantity} onChange={setQuantity} /><button className="button button-small" onClick={() => onAdd(product, quantity)}>Add to cart</button></div><button className="view-details" onClick={() => onView(product)}>View details <ArrowRight size={14} /></button></div></article>; }
+function ProductCard({ product, onAdd, onView }: { product: Product; onAdd: (p: Product, q?: number) => void; onView: (p: Product) => void }) { const [quantity, setQuantity] = useState(1); return <article className="product-card"><button className="product-image-button" onClick={() => onView(product)}><div className="product-image">{product.hoverImage && <img className="product-img-hover" src={product.hoverImage} alt="" aria-hidden="true" />}<img className="product-img-default" src={product.image} alt={product.name} /><span className="product-tag">{product.category === 'Ladoos' ? 'Ladoo' : 'Bar'}</span></div></button><div className="product-card-copy"><div className="product-card-top"><div><p className="product-category">{product.category}</p><h3>{product.name}</h3></div><strong>{money(product.price)}</strong></div><p className="product-description">{product.description}</p><div className="product-card-actions"><QuantitySelector quantity={quantity} onChange={setQuantity} /><button className="button button-small" onClick={() => onAdd(product, quantity)}>Add to cart</button></div><button className="view-details" onClick={() => onView(product)}>View details <ArrowRight size={14} /></button></div></article>; }
 function QuantitySelector({ quantity, onChange }: { quantity: number; onChange: (q: number) => void }) { return <div className="quantity-selector"><button onClick={() => onChange(Math.max(1, quantity - 1))} aria-label="Decrease quantity"><Minus size={14} /></button><span>{quantity}</span><button onClick={() => onChange(quantity + 1)} aria-label="Increase quantity"><Plus size={14} /></button></div>; }
 function WhySection() { const items = [{ icon: Leaf, title: 'Pure ingredients', text: 'Thoughtfully selected ingredients.' }, { icon: Sparkles, title: 'Freshly crafted', text: 'Made with care for freshness.' }, { icon: Zap, title: 'Wholesome nutrition', text: 'Balanced nourishment, every day.' }, { icon: Star, title: 'Rooted in tradition', text: 'Indian food, thoughtfully reimagined.' }]; return <section className="section why-section"><SectionHeading eyebrow="Why Anamritam" title="The good stuff, made simple" /><div className="why-grid">{items.map(item => <div className="why-item" key={item.title}><item.icon size={25} strokeWidth={1.5} /><h3>{item.title}</h3><p>{item.text}</p></div>)}</div></section>; }
 function InstagramSection() { return <section className="instagram-section"><div><Instagram size={28} /><p className="eyebrow">From our kitchen to your feed</p><h2>Follow <em>Anamritam</em></h2><p>Discover our products, stories and journey.</p><a className="button button-dark" href={instagramUrl} target="_blank" rel="noreferrer">Follow us on Instagram <ArrowRight size={17} /></a></div><div className="insta-grid"><img src="https://images.pexels.com/photos/15741144/pexels-photo-15741144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Colourful spices at a market" /><img src="https://images.pexels.com/photos/57042/pexels-photo-57042.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Almonds ready for snacking" /><img src="https://images.pexels.com/photos/7932705/pexels-photo-7932705.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Natural ingredients on a table" /></div></section>; }
 function Products({ onProduct, onAdd }: { onProduct: (p: Product) => void; onAdd: (p: Product, q?: number) => void }) { const [filter, setFilter] = useState<'All' | Category>('All'); const [sort, setSort] = useState('Featured'); const shown = useMemo(() => [...products.filter(p => filter === 'All' || p.category === filter)].sort((a, b) => sort === 'Price: Low to High' ? a.price - b.price : sort === 'Price: High to Low' ? b.price - a.price : 0), [filter, sort]); return <section className="products-page"><div className="page-hero"><div><p className="eyebrow">A little good goes a long way</p><h1>Shop Anamritam</h1><p>Wholesome Indian nourishment, made for everyday life.</p></div><span className="page-hero-count">{products.length} products</span></div><div className="products-toolbar"><div className="filter-tabs">{(['All', 'Ladoos', 'Protein Bars'] as const).map(option => <button key={option} className={filter === option ? 'active' : ''} onClick={() => setFilter(option)}>{option}</button>)}</div><label className="sort-select"><span>Sort by</span><select value={sort} onChange={event => setSort(event.target.value)}><option>Featured</option><option>Price: Low to High</option><option>Price: High to Low</option></select><ChevronDown size={15} /></label></div><div className="section products-grid-section"><div className="product-grid all-products-grid">{shown.map(product => <ProductCard key={product.id} product={product} onAdd={onAdd} onView={onProduct} />)}</div></div></section>; }
-function ProductDetails({ product, onAdd, onBack }: { product: Product; onAdd: (p: Product, q?: number) => void; onBack: () => void }) { const [quantity, setQuantity] = useState(1); const [tab, setTab] = useState('Description'); return <section className="product-detail-page"><button className="back-link" onClick={onBack}><ChevronLeft size={17} /> Back to products</button><div className="product-detail"><div className="detail-image"><img src={product.image} alt={product.name} /></div><div className="detail-copy"><p className="product-category">{product.category}</p><h1>{product.name}</h1><div className="detail-rating"><span>★★★★★</span> <small>Made with care</small></div><p className="detail-price">{money(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-meta"><span>Pack size<strong>{product.pack}</strong></span><span>Made with<strong>Real ingredients</strong></span></div><div className="detail-buy"><QuantitySelector quantity={quantity} onChange={setQuantity} /><button className="button button-dark" onClick={() => onAdd(product, quantity)}>Add to cart <ShoppingBag size={17} /></button></div><p className="delivery-note"><Truck size={17} /> Carefully packed and delivered fresh</p></div></div><div className="detail-tabs"><div>{['Description', 'Ingredients', 'Nutrition information'].map(item => <button className={tab === item ? 'active' : ''} key={item} onClick={() => setTab(item)}>{item}</button>)}</div><p>{tab === 'Description' ? product.description : tab === 'Ingredients' ? product.ingredients : product.nutrition}</p></div></section>; }
+function ProductDetails({ product, onAdd, onBack }: { product: Product; onAdd: (p: Product, q?: number) => void; onBack: () => void }) { const [quantity, setQuantity] = useState(1); const [tab, setTab] = useState('Description'); const [activeImg, setActiveImg] = useState(product.image); return <section className="product-detail-page"><button className="back-link" onClick={onBack}><ChevronLeft size={17} /> Back to products</button><div className="product-detail"><div className="detail-image-col"><div className="detail-image"><img src={activeImg} alt={product.name} /></div>{product.hoverImage && <div className="detail-thumbnails"><button className={`detail-thumb ${activeImg === product.image ? 'is-active' : ''}`} onClick={() => setActiveImg(product.image)}><img src={product.image} alt={product.name} /></button><button className={`detail-thumb ${activeImg === product.hoverImage ? 'is-active' : ''}`} onClick={() => setActiveImg(product.hoverImage!)}><img src={product.hoverImage} alt={`${product.name} alternate view`} /></button></div>}</div><div className="detail-copy"><p className="product-category">{product.category}</p><h1>{product.name}</h1><div className="detail-rating"><span>★★★★★</span> <small>Made with care</small></div><p className="detail-price">{money(product.price)}</p><p className="detail-description">{product.description}</p><div className="detail-meta"><span>Pack size<strong>{product.pack}</strong></span><span>Made with<strong>Real ingredients</strong></span></div><div className="detail-buy"><QuantitySelector quantity={quantity} onChange={setQuantity} /><button className="button button-dark" onClick={() => onAdd(product, quantity)}>Add to cart <ShoppingBag size={17} /></button></div><p className="delivery-note"><Truck size={17} /> Carefully packed and delivered fresh</p></div></div><div className="detail-tabs"><div>{['Description', 'Ingredients', 'Nutrition information'].map(item => <button className={tab === item ? 'active' : ''} key={item} onClick={() => setTab(item)}>{item}</button>)}</div><p>{tab === 'Description' ? product.description : tab === 'Ingredients' ? product.ingredients : product.nutrition}</p></div></section>; }
 function CartDrawer({ cart, subtotal, onChange, onRemove, onClose, onNavigate }: { cart: CartLine[]; subtotal: number; onChange: (id: string, d: number) => void; onRemove: (id: string) => void; onClose: () => void; onNavigate: (p: Page) => void }) { return <div className="drawer-backdrop" onClick={onClose}><aside className="cart-drawer" onClick={event => event.stopPropagation()}><div className="drawer-header"><h2>Your cart <span>{cart.length}</span></h2><button onClick={onClose} aria-label="Close cart"><X size={21} /></button></div>{cart.length === 0 ? <EmptyCart onNavigate={onNavigate} /> : <><div className="drawer-items">{cart.map(line => <CartItem key={line.product.id} line={line} onChange={onChange} onRemove={onRemove} />)}</div><div className="drawer-summary"><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><p>Shipping calculated at checkout.</p><button className="button button-dark full-width" onClick={() => onNavigate('checkout')}>Checkout <ArrowRight size={17} /></button><button className="view-cart-button" onClick={() => onNavigate('cart')}>View full cart</button></div></>}</aside></div>; }
 function CartItem({ line, onChange, onRemove }: { line: CartLine; onChange: (id: string, d: number) => void; onRemove: (id: string) => void }) { return <div className="cart-item"><img src={line.product.image} alt={line.product.name} /><div className="cart-item-content"><div><h3>{line.product.name}</h3><p>{money(line.product.price)}</p></div><button className="remove-button" aria-label={`Remove ${line.product.name}`} onClick={() => onRemove(line.product.id)}><Trash2 size={15} /></button><div className="cart-item-bottom"><div className="mini-quantity"><button onClick={() => onChange(line.product.id, -1)}><Minus size={12} /></button><span>{line.quantity}</span><button onClick={() => onChange(line.product.id, 1)}><Plus size={12} /></button></div><strong>{money(line.product.price * line.quantity)}</strong></div></div></div>; }
 function EmptyCart({ onNavigate }: { onNavigate: (p: Page) => void }) { return <div className="empty-cart"><ShoppingBag size={35} /><h3>Your cart is empty</h3><p>Find something good to bring home.</p><button className="button button-dark" onClick={() => onNavigate('products')}>Continue shopping</button></div>; }
