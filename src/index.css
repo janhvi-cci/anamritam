@@ -1308,6 +1308,160 @@ body {
   padding-top: 30px;
 }
 
+.featured-nutri {
+  max-width: 1240px;
+  margin: 38px auto 0;
+  padding: 72px clamp(28px, 6vw, 88px);
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(360px, 1.15fr);
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(118deg, #fff4c9 0%, #f5edc8 44%, #e4efd2 100%);
+  border: 1px solid rgba(194, 147, 58, 0.35);
+  border-radius: 28px;
+  box-shadow: 0 18px 44px rgba(112, 87, 35, 0.12);
+  isolation: isolate;
+}
+
+.featured-nutri::before,
+.featured-nutri::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.featured-nutri::before {
+  width: 420px;
+  height: 420px;
+  right: 7%;
+  bottom: -280px;
+  background: rgba(239, 178, 55, 0.23);
+  box-shadow: 0 0 90px rgba(255, 250, 208, 0.75);
+}
+
+.featured-nutri::after {
+  width: 180px;
+  height: 180px;
+  left: 44%;
+  top: -98px;
+  border: 1px solid rgba(96, 139, 65, 0.24);
+}
+
+.featured-nutri-copy,
+.featured-nutri-visual {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.featured-nutri.is-visible .featured-nutri-copy,
+.featured-nutri.is-visible .featured-nutri-visual {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.featured-nutri.is-visible .featured-nutri-visual {
+  transition-delay: 0.12s;
+}
+
+.featured-nutri-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.featured-nutri-copy h2 {
+  max-width: 440px;
+  margin: 12px 0 18px;
+  font-size: clamp(2.45rem, 4.5vw, 4.4rem);
+}
+
+.featured-nutri-copy > p:not(.eyebrow) {
+  max-width: 370px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+
+.featured-nutri-visual {
+  min-width: 0;
+  min-height: 430px;
+  padding: 0;
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  cursor: pointer;
+  perspective: 900px;
+}
+
+.featured-nutri-stage {
+  position: absolute;
+  width: min(82%, 480px);
+  height: 94px;
+  bottom: 32px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(67, 75, 33, 0.25), rgba(67, 75, 33, 0) 70%);
+  filter: blur(8px);
+  transform: rotateX(62deg);
+}
+
+.featured-nutri-image {
+  position: absolute;
+  width: min(100%, 570px);
+  max-height: 520px;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 24px rgba(91, 65, 20, 0.2));
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.featured-nutri-image-default {
+  opacity: 1;
+  z-index: 2;
+  transform: translateY(-5px) rotate(-1deg);
+  animation: nutri-float 5.5s ease-in-out infinite;
+}
+
+.featured-nutri-image-hover {
+  opacity: 0;
+  z-index: 3;
+  transform: translateY(-5px) rotate(1deg) scale(1.015);
+}
+
+.featured-nutri-visual:hover .featured-nutri-image-default {
+  transform: translateY(-5px) rotate(-1deg) scale(1.01);
+}
+
+.featured-nutri-visual:hover .featured-nutri-image-hover {
+  opacity: 1;
+}
+
+.featured-nutri-star,
+.featured-nutri-dot {
+  position: absolute;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+.featured-nutri-star { font-size: 30px; }
+.star-one { top: 12%; right: 10%; }
+.star-two { bottom: 18%; left: 5%; font-size: 24px; color: var(--leaf); }
+.featured-nutri-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+.dot-one { top: 28%; left: 8%; }
+
+@keyframes nutri-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@media (hover: none) {
+  .featured-nutri-visual:hover .featured-nutri-image-hover { opacity: 0; }
+  .featured-nutri-visual:hover .featured-nutri-image-default { transform: translateY(-5px) rotate(-1deg); }
+}
+
 .product-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -2880,6 +3034,27 @@ body {
     flex-wrap: wrap;
     gap: 13px;
   }
+  .featured-nutri {
+    margin: 22px 22px 0;
+    padding: 48px 24px 30px;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .featured-nutri-copy h2 {
+    font-size: 42px;
+  }
+  .featured-nutri-copy > p:not(.eyebrow) {
+    margin-bottom: 24px;
+  }
+  .featured-nutri-visual {
+    min-height: 330px;
+  }
+  .featured-nutri-image {
+    max-height: 390px;
+  }
+  .featured-nutri-stage {
+    bottom: 18px;
+  }
   .hero-badge {
     width: 93px;
     height: 93px;
@@ -3905,6 +4080,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .featured-nutri-image-default { animation: none; }
   .product-img-hover,
   .product-img-default,
   .detail-thumb { transition: none; }

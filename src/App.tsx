@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, CircleUserRound,
   Clock3, Globe, Instagram, Leaf, Menu, Minus, Moon, Plus, Search, ShoppingBag, Sparkles,
@@ -86,6 +86,7 @@ const products: Product[] = [
   { id: 'elaichi-ginger-saunf', name: 'Elaichi Ginger Saunf', category: 'Ladoos', description: 'A rich, wholesome ladoo made with traditional ingredients, fragrant elaichi, ginger and saunf — sweetened naturally, rooted in tradition.', price: 599, image: '/images/products/elaichigingersaunf.png', hoverImage: '/images/products/elaichigingersaunf_hover.png', ingredients: 'Mahua flower, almonds, cashews, sesame seeds, flax seeds, jaggery, pure ghee, elaichi, ginger, saunf', pack: 'Box of 6 · 250 g', nutrition: 'Serving size 42 g · Approx. 175 kcal' },
   { id: 'protein-bar-1', name: 'Protein Bar 1', category: 'Protein Bars', description: 'A high-protein bar crafted from natural ingredients — no added sugar, made for active everyday life.', price: 299, image: '/images/products/proteinbar1.png', hoverImage: '/images/products/proteinbar1_hover.png', ingredients: 'Peanut protein, oats, dates, chia seeds, roasted grains, natural flavours', pack: 'Pack of 1 · 60 g', nutrition: 'Serving size 60 g · Approx. 220 kcal · Protein 12 g' },
   { id: 'protein-bar-2', name: 'Protein Bar 2', category: 'Protein Bars', description: 'Wholesome energy in every bite — made from real ingredients, naturally sweetened, suitable for active lifestyles.', price: 299, image: '/images/products/proteinbar2.png', hoverImage: '/images/products/proteinbar2_hover.png', ingredients: 'Peanut protein, almonds, oats, dates, sesame, natural cocoa', pack: 'Pack of 1 · 60 g', nutrition: 'Serving size 60 g · Approx. 225 kcal · Protein 13 g' },
+  { id: 'nutri-bites', name: 'Nutri Bites', category: 'Protein Bars', description: 'A wholesome protein bar made specially for kids, with a delicious bite for growing everyday adventures.', price: 299, image: '/images/products/nutribites.png', hoverImage: '/images/products/nutribar_hover.png', ingredients: 'Oats, peanuts, almonds, cashews, seeds, dates and chocolate coating', pack: 'Pack of 1 · 60 g', nutrition: 'Serving size 60 g · See pack for details' },
 ];
 
 const heroImage = 'https://images.pexels.com/photos/7932705/pexels-photo-7932705.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
@@ -488,8 +489,57 @@ function MobileMenu({
     </div>
   );
 }
-function Home({ onNavigate, onProduct, onAdd }: { onNavigate: (page: Page) => void; onProduct: (p: Product) => void; onAdd: (p: Product, q?: number) => void }) {
+function HomeContent({ onNavigate, onProduct, onAdd }: { onNavigate: (page: Page) => void; onProduct: (p: Product) => void; onAdd: (p: Product, q?: number) => void }) {
   return <><section className="hero"><div className="hero-copy"><p className="eyebrow">Nourishment, made the Indian way</p><h1>Goodness that<br /><em>comes naturally.</em></h1><p className="hero-subtitle">Pure, fresh and wholesome ladoos and protein bars crafted for everyday nourishment.</p><div className="hero-actions"><button className="button button-dark" onClick={() => onNavigate('products')}>Shop now <ArrowRight size={17} /></button><button className="text-button" onClick={() => onNavigate('products')}>Explore our products <ArrowRight size={16} /></button></div><div className="hero-trust"><span><Leaf size={17} /> Thoughtfully sourced</span><span><Sparkles size={17} /> Small-batch made</span></div></div><div className="hero-visual"><img src={heroImage} alt="Indian ingredients arranged on a natural kitchen table" /><div className="hero-badge"><span>01</span><p>Rooted in<br />real ingredients</p></div></div></section><section className="intro section"><div className="intro-mark">A</div><div><p className="eyebrow">A little about us</p><h2>Welcome to <em>Anamritam</em></h2><p className="body-copy">We bring together the goodness of traditional Indian ingredients and the ease of modern nutrition. Honest food, made with care, for the everyday moments that matter.</p><button className="underlined-link" onClick={() => onNavigate('story')}>Our story <ArrowRight size={15} /></button></div></section><CategorySection onNavigate={onNavigate} /><section className="section featured-section"><SectionHeading eyebrow="Made for your everyday" title="Favourites, for good reason" action="Shop all" onAction={() => onNavigate('products')} /><div className="product-grid featured-grid">{products.slice(0, 4).map(product => <ProductCard key={product.id} product={product} onAdd={onAdd} onView={onProduct} />)}</div></section><WhySection /><section className="story-banner"><div className="story-banner-image"><img src="https://images.pexels.com/photos/34142354/pexels-photo-34142354.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Peanuts and grains prepared for a wholesome recipe" /></div><div className="story-banner-copy"><p className="eyebrow">The Anamritam way</p><h2>Rooted in tradition.<br /><em>Made for today.</em></h2><p>We believe nourishing food can be joyful, convenient and deeply connected to where we come from.</p><button className="button button-light" onClick={() => onNavigate('story')}>Discover our story <ArrowRight size={17} /></button></div></section><InstagramSection /></>;
+}
+function Home({ onNavigate, onProduct, onAdd }: { onNavigate: (page: Page) => void; onProduct: (p: Product) => void; onAdd: (p: Product, q?: number) => void }) {
+  const nutriBites = products.find(product => product.id === 'nutri-bites')!;
+  return <><HomeContent onNavigate={onNavigate} onProduct={onProduct} onAdd={onAdd} /><FeaturedNutriBites product={nutriBites} onProduct={onProduct} /></>;
+}
+function FeaturedNutriBites({ product, onProduct }: { product: Product; onProduct: (p: Product) => void }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || !('IntersectionObserver' in window)) {
+      setIsVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.2 });
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const intro = document.querySelector('.intro.section');
+    if (section && intro?.parentElement) {
+      intro.parentElement.insertBefore(section, intro);
+    }
+  }, []);
+
+  return <section ref={sectionRef} className={`featured-nutri ${isVisible ? 'is-visible' : ''}`}>
+    <div className="featured-nutri-copy">
+      <p className="eyebrow">NEW · KIDS' RANGE</p>
+      <h2>Made for Little <em>Superheroes</em></h2>
+      <p>A wholesome protein bar made specially for kids, from Anamritam.</p>
+      <button className="button button-dark" onClick={() => onProduct(product)}>Shop Nutri Bites <ArrowRight size={17} /></button>
+    </div>
+      <button className="featured-nutri-visual" onClick={() => onProduct(product)} aria-label="View Nutri Bites product details">
+      <span className="featured-nutri-star star-one">✦</span>
+      <span className="featured-nutri-star star-two">✧</span>
+      <span className="featured-nutri-dot dot-one" />
+      <span className="featured-nutri-stage" aria-hidden="true" />
+      <img className="featured-nutri-image featured-nutri-image-hover" src={product.hoverImage} alt="" />
+      <img className="featured-nutri-image featured-nutri-image-default" src={product.image} alt="Nutri Bites protein bar for kids" />
+    </button>
+  </section>;
 }
 function SectionHeading({ eyebrow, title, action, onAction }: { eyebrow: string; title: string; action?: string; onAction?: () => void }) { return <div className="section-heading"><div><p className="eyebrow">{eyebrow}</p><h2>{title}</h2></div>{action && <button className="underlined-link" onClick={onAction}>{action} <ArrowRight size={15} /></button>}</div>; }
 function CategorySection({ onNavigate }: { onNavigate: (page: Page) => void }) { return <section className="section category-section"><SectionHeading eyebrow="Find your kind of good" title="Shop by category" /><div className="category-grid"><button className="category-card category-ladoo" onClick={() => onNavigate('products')}><div><span className="category-number">01</span><h3>Ladoos</h3><p>Traditional goodness,<br />thoughtfully crafted.</p><span className="category-link">Explore ladoos <ArrowRight size={16} /></span></div><img src="https://images.pexels.com/photos/27695747/pexels-photo-27695747.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Traditional Indian ladoos" /></button><button className="category-card category-bar" onClick={() => onNavigate('products')}><div><span className="category-number">02</span><h3>Protein bars</h3><p>Wholesome energy for<br />modern everyday life.</p><span className="category-link">Explore protein bars <ArrowRight size={16} /></span></div><img src="https://images.pexels.com/photos/13898315/pexels-photo-13898315.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="Wholesome nut protein bars" /></button></div></section>; }
